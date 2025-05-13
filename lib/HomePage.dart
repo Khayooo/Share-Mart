@@ -43,12 +43,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
 
     _controller.forward();
+    _checkLoginStatus();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  // This function was checking for login status but wasn't used for navigation.
+  // Removing it as per the instructions to adjust functionality and remove errors.
+  void _checkLoginStatus() {
+    // Function previously checked login status but is no longer needed in this context.
   }
 
   void _showAddItemDialog(BuildContext context) {

@@ -1,9 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key, required String itemType});
+
 
   @override
   State<AddItemScreen> createState() => _AddItemScreenState();
@@ -11,27 +14,49 @@ class AddItemScreen extends StatefulWidget {
 
 class _AddItemScreenState extends State<AddItemScreen> {
   final _formKey = GlobalKey<FormState>();
+  final DatabaseReference _ref = FirebaseDatabase.instance.ref();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+
   File? _selectedImage;
+  String? _base64image;
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(
+    final pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
     );
 
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
         _selectedImage = File(pickedFile.path);
+        _base64image = base64Encode(bytes);
       });
+    }
+  }
+
+  void _uploadData() {
+    try {
+      String uid = _ref.push().key!;
+      ItemModel itemModel = ItemModel(
+        productName: _nameController.text,
+        productPrice: _priceController.text,
+        productDescription: _descriptionController.text,
+        image: _base64image ?? '',
+        uid: uid,
+      );
+      _ref.child('items').child(uid).set(itemModel.toMap());
+    } catch (e) {
+      print(e);
     }
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate() && _selectedImage != null) {
-      // Handle form submission
+      _uploadData();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Item added successfully!')),
       );
@@ -75,7 +100,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Image Picker
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -91,12 +115,15 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   child: _selectedImage == null
                       ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+
+
                     children: [
                       Icon(
                         Icons.add_a_photo,
                         size: 48,
                         color: Colors.deepPurple.shade300,
                       ),
+
                       const SizedBox(height: 8),
                       Text(
                         'Tap to add image',
@@ -118,8 +145,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Product Name Field
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -137,8 +162,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              // Price Field
               TextFormField(
                 controller: _priceController,
                 keyboardType: TextInputType.number,
@@ -160,8 +183,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              // Description Field
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 4,
@@ -184,8 +205,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 },
               ),
               const SizedBox(height: 24),
-
-              // Submit Button
               ElevatedButton(
                 onPressed: _submitForm,
                 style: ElevatedButton.styleFrom(
@@ -206,6 +225,42 @@ class _AddItemScreenState extends State<AddItemScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class ItemModel {
+  final String productName;
+  final String productPrice;
+  final String productDescription;
+  final String image;
+  final String uid;
+
+  ItemModel({
+    required this.productName,
+    required this.productPrice,
+    required this.productDescription,
+    required this.image,
+    required this.uid,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'productName': productName,
+      'productPrice': productPrice,
+      'productDescription': productDescription,
+      'image': image,
+      'uid': uid,
+    };
+  }
+
+  factory ItemModel.fromMap(Map<String, dynamic> map) {
+    return ItemModel(
+      productName: map['productName'] ?? '',
+      productPrice: map['productPrice'] ?? '',
+      productDescription: map['productDescription'] ?? '',
+      image: map['image'] ?? '',
+      uid: map['uid'] ?? '',
     );
   }
 }

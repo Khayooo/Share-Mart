@@ -43,7 +43,7 @@ dependencies:
   google_sign_in: any
   image_picker: ^0.8.7+1
   font_awesome_flutter: ^10.5.0
-  http: any
+  shared_preferences: ^2.2.3
 
 
 
