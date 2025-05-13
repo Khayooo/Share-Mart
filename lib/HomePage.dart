@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:fyp_donation/ListedItem.dart';
 import 'AccountScreen.dart';
 import 'ItemDetailsScreen.dart';
 import 'Notifications.dart';
@@ -183,7 +184,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     final List<Map<String, dynamic>> featuredItems = [
       {
-        "image": "images/Airpod.png",
+        "image": "images/watch_1.png",
         "title": "AirPods",
         "distance": "0.5 km away",
         "price": "2,500",
@@ -195,7 +196,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         }
       },
       {
-        "image": "images/Book_1.png",
+        "image": "images/watch_2.png",
         "title": "Science Book",
         "distance": "1.2 km away",
         "price": "500",
@@ -207,7 +208,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         }
       },
       {
-        "image": "images/Book_1.png",
+        "image": "images/watch_3.png",
         "title": "Science Book",
         "distance": "1.2 km away",
         "price": "500",
@@ -219,7 +220,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         }
       },
       {
-        "image": "images/Book_1.png",
+        "image": "images/Book_2.png",
         "title": "Science Book",
         "distance": "1.2 km away",
         "price": "500",
@@ -257,7 +258,21 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   const SizedBox(height: 24),
                   _buildSearchBar(isLargeScreen),
                   const SizedBox(height: 28),
-                  _buildSectionHeader("Featured Items", "See all"),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Featured Items",style: TextStyle(color: Colors.deepPurple,fontSize: 20,fontWeight: FontWeight.bold),
+                      ),
+                      TextButton(onPressed: (){
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ItemListed()),
+                        );
+                      }, child: Text("See all", style: TextStyle(color:
+                      Colors.deepPurple,fontSize: 14,fontWeight: FontWeight.w600))),
+                    ]
+                      ),
                   const SizedBox(height: 16),
                   GridView.builder(
                     shrinkWrap: true,

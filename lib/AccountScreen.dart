@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'LoginScreen.dart';
 import 'ProfileInformationScreen.dart';
 import 'SavedItemsScreen.dart';
@@ -61,6 +62,15 @@ class _AccountScreenState extends State<AccountScreen> with SingleTickerProvider
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (Route<dynamic> route) => false,
+    );
   }
 
   @override
@@ -148,19 +158,11 @@ class _AccountScreenState extends State<AccountScreen> with SingleTickerProvider
                 const SizedBox(height: 24),
 
                 // Logout Button
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Handle logout
-                       Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
-                  );
-
-                    },
+                     onPressed: _logout,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade50,
                       foregroundColor: Colors.red,
