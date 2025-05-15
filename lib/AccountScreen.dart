@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'DonorVerificationScreen.dart';
 import 'LoginScreen.dart';
 import 'ProfileInformationScreen.dart';
 import 'SavedItemsScreen.dart';
@@ -145,6 +146,10 @@ class _AccountScreenState extends State<AccountScreen> with SingleTickerProvider
                   subtitle: "Get verified to receive donations",
                   onTap: () {
                     // Navigate to verification
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DonorVerificationScreen()),
+                    );
                   },
                 ),
                 _buildAccountOption(

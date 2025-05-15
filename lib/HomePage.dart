@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:fyp_donation/ListedItem.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'ListedItem.dart';
 import 'AccountScreen.dart';
 import 'ItemDetailsScreen.dart';
+import 'ListedItem.dart';
 import 'Notifications.dart';
 import 'AddItemScreen.dart';
 import 'DonationItems.dart';
@@ -18,6 +21,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   late AnimationController _controller;
   late Animation<double> _opacityAnimation;
   late Animation<double> _scaleAnimation;
+  final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref().child('items');
 
   @override
   void initState() {
@@ -44,19 +48,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
 
     _controller.forward();
-    _checkLoginStatus();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  // This function was checking for login status but wasn't used for navigation.
-  // Removing it as per the instructions to adjust functionality and remove errors.
-  void _checkLoginStatus() {
-    // Function previously checked login status but is no longer needed in this context.
   }
 
   void _showAddItemDialog(BuildContext context) {
@@ -132,9 +129,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: () => Navigator.pop(context),
                   child: const Text(
                     "Cancel",
                     style: TextStyle(color: Colors.deepPurple),
@@ -148,7 +143,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     ),
                   ),
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.pop(context);
                     if (sellChecked || donateChecked || exchangeChecked) {
                       Navigator.push(
                         context,
@@ -158,7 +153,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 ? "Sell"
                                 : donateChecked
                                 ? "Donate"
-                                : "Exchanges",
+                                : "Exchange",
                           ),
                         ),
                       );
@@ -177,70 +172,142 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
   }
 
+  Widget _buildFeaturedItemsGrid(bool isLargeScreen) {
+    return StreamBuilder(
+      stream: _databaseRef.onValue,
+      builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final itemsMap = snapshot.data?.snapshot.value as Map<dynamic, dynamic>?;
+        if (itemsMap == null || itemsMap.isEmpty) {
+          return const Center(child: Text('No items available'));
+        }
+
+        final items = itemsMap.entries.map((entry) {
+          final data = entry.value as Map<dynamic, dynamic>;
+          return ItemModel.fromMap(Map<String, dynamic>.from(data));
+        }).toList();
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: isLargeScreen ? 4 : 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ItemDetailsScreen(
+                      item: {
+                        "image": item.image,
+                        "title": item.productName,
+                        "price": item.productPrice,
+                        "description": item.productDescription,
+                        "donor": {
+                          "name": "Donor Name", // Add actual donor data
+                          "address": "Donor Address",
+                          "cnic": "Donor CNIC"
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16)),
+                        child: item.image.isNotEmpty
+                            ? Image.memory(
+                          base64Decode(item.image),
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                        )
+                            : Container(
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.image,
+                              size: 50, color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.productName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.deepPurple.shade50,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  "Rs. ${item.productPrice}",
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.deepPurple),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {},
+                                icon: Icon(Icons.favorite_border,
+                                    size: 20, color: Colors.grey.shade600),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
-
-    final List<Map<String, dynamic>> featuredItems = [
-      {
-        "image": "images/watch_1.png",
-        "title": "AirPods",
-        "distance": "0.5 km away",
-        "price": "2,500",
-        "description": "HP 'E241PU' LED\nIS, 6th Generation\n19 Inch wide monitor",
-        "donor": {
-          "name": "Noman Ashraf",
-          "address": "Verpal Chartha",
-          "cnic": "34104-**********"
-        }
-      },
-      {
-        "image": "images/watch_2.png",
-        "title": "Science Book",
-        "distance": "1.2 km away",
-        "price": "500",
-        "description": "Physics textbook\n10th Edition\nGood condition",
-        "donor": {
-          "name": "Ali Khan",
-          "address": "University Town",
-          "cnic": "12345-6789012"
-        }
-      },
-      {
-        "image": "images/watch_3.png",
-        "title": "Science Book",
-        "distance": "1.2 km away",
-        "price": "500",
-        "description": "Physics textbook\n10th Edition\nGood condition",
-        "donor": {
-          "name": "Ali Khan",
-          "address": "University Town",
-          "cnic": "12345-6789012"
-        }
-      },
-      {
-        "image": "images/Book_2.png",
-        "title": "Science Book",
-        "distance": "1.2 km away",
-        "price": "500",
-        "description": "Physics textbook\n10th Edition\nGood condition",
-        "donor": {
-          "name": "Ali Khan",
-          "address": "University Town",
-          "cnic": "12345-6789012"
-        }
-      }
-    ];
-
-    final List<Map<String, dynamic>> categories = [
-      {"icon": Icons.electrical_services, "title": "Electronics"},
-      {"icon": Icons.watch_outlined, "title": "Watches"},
-      {"icon": Icons.chair_alt_outlined, "title": "Furniture"},
-      {"icon": Icons.menu_book, "title": "Books"},
-      {"icon": Icons.kitchen, "title": "Kitchenware"},
-      {"icon": Icons.toys, "title": "Toys"},
-    ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F5FF),
@@ -262,132 +329,30 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        "Featured Items",style: TextStyle(color: Colors.deepPurple,fontSize: 20,fontWeight: FontWeight.bold),
+                        "Featured Items",
+                        style: TextStyle(
+                            color: Colors.deepPurple,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold),
                       ),
-                      TextButton(onPressed: (){
-                        Navigator.push(
+                      TextButton(
+                        onPressed: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ItemListed()),
-                        );
-                      }, child: Text("See all", style: TextStyle(color:
-                      Colors.deepPurple,fontSize: 14,fontWeight: FontWeight.w600))),
-                    ]
-                      ),
-                  const SizedBox(height: 16),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: isLargeScreen ? 4 : 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemCount: featuredItems.length,
-                    itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ItemDetailsScreen(
-                                item: featuredItems[index],
-                              ),
-                            ),
-                          );
-                        },
-                        child: Hero(
-                          tag: featuredItems[index]['image'],
-                          child: Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(16)),
-                                    child: Image.asset(
-                                      featuredItems[index]['image'],
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        featuredItems[index]['title'],
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.location_on,
-                                              size: 14,
-                                              color: Colors.grey.shade600),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            featuredItems[index]['distance'],
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Container(
-                                            constraints: BoxConstraints(maxWidth: 80),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 6),
-                                            decoration: BoxDecoration(
-                                              color: Colors.deepPurple.shade50,
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              "Rs. ${featuredItems[index]['price']}",
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.deepPurple,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            onPressed: () {},
-                                            icon: Icon(Icons.favorite_border,
-                                                size: 20,
-                                                color: Colors.grey.shade600),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          MaterialPageRoute(
+                              builder: (context) => const ItemListed()),
                         ),
-                      );
-                    },
+                        child: Text(
+                          "See all",
+                          style: TextStyle(
+                              color: Colors.deepPurple,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 16),
+                  _buildFeaturedItemsGrid(isLargeScreen),
                   const SizedBox(height: 32),
                   _buildSectionHeader("Browse by Category", "See all"),
                   const SizedBox(height: 16),
@@ -395,10 +360,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     height: 110,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        return _buildCategoryItem(categories[index], context);
-                      },
+                      itemCount: _categories.length,
+                      itemBuilder: (context, index) =>
+                          _buildCategoryItem(_categories[index], context),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -411,6 +375,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       bottomNavigationBar: _buildBottomNavBar(context),
     );
   }
+
+  // Rest of the helper widgets remain the same as previous version
+  // (_buildHeader, _buildSearchBar, _buildSectionHeader,
+  // _buildCategoryItem, _buildBottomNavBar)
+
+  // Add your category list
+  final List<Map<String, dynamic>> _categories = [
+    {"icon": Icons.electrical_services, "title": "Electronics"},
+    {"icon": Icons.watch_outlined, "title": "Watches"},
+    {"icon": Icons.chair_alt_outlined, "title": "Furniture"},
+    {"icon": Icons.menu_book, "title": "Books"},
+    {"icon": Icons.kitchen, "title": "Kitchenware"},
+    {"icon": Icons.toys, "title": "Toys"},
+  ];
 
   Widget _buildHeader(BuildContext context, bool isLargeScreen) {
     return Padding(
@@ -440,12 +418,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ],
           ),
           IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const Notifications()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Notifications()),
+            ),
             icon: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -529,9 +505,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   Widget _buildCategoryItem(Map<String, dynamic> category, BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // Handle category tap
-      },
+      onTap: () {/* Handle category tap */},
       child: Container(
         width: 90,
         margin: const EdgeInsets.only(right: 16),
@@ -575,7 +549,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: BottomNavigationBar(
-          currentIndex: 0, // Home is selected
+          currentIndex: 0,
           type: BottomNavigationBarType.fixed,
           selectedItemColor: Colors.deepPurple,
           unselectedItemColor: Colors.grey.shade500,
@@ -621,6 +595,29 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ],
         ),
       ),
+    );
+  }
+}
+
+class ItemModel {
+  final String productName;
+  final String productPrice;
+  final String productDescription;
+  final String image;
+
+  ItemModel({
+    required this.productName,
+    required this.productPrice,
+    required this.productDescription,
+    required this.image,
+  });
+
+  factory ItemModel.fromMap(Map<String, dynamic> map) {
+    return ItemModel(
+      productName: map['productName'] ?? '',
+      productPrice: map['productPrice'] ?? '',
+      productDescription: map['productDescription'] ?? '',
+      image: map['image'] ?? '',
     );
   }
 }

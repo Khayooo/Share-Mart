@@ -1,13 +1,129 @@
 import 'package:flutter/material.dart';
-// import 'package:fyp_donation/AddItemScreen.dart';
-// import 'package:fyp_donation/HomePage.dart';
 import 'AccountScreen.dart';
-// import 'AddItemScreen.dart';
-// import 'HomePage.dart';
+import 'HomePage.dart';
 import 'ItemDetailsScreen.dart';
+import 'AddItemScreen.dart';
 
 class DonationItems extends StatelessWidget {
   const DonationItems({super.key});
+
+  void _showAddItemDialog(BuildContext context) {
+    bool sellChecked = false;
+    bool donateChecked = false;
+    bool exchangeChecked = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text(
+                "Select Item Type",
+                style: TextStyle(
+                  color: Colors.deepPurple,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CheckboxListTile(
+                    title: const Text("Sell Product"),
+                    value: sellChecked,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        sellChecked = value!;
+                        if (sellChecked) {
+                          donateChecked = false;
+                          exchangeChecked = false;
+                        }
+                      });
+                    },
+                    activeColor: Colors.deepPurple,
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                  CheckboxListTile(
+                    title: const Text("Donate Product"),
+                    value: donateChecked,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        donateChecked = value!;
+                        if (donateChecked) {
+                          sellChecked = false;
+                          exchangeChecked = false;
+                        }
+                      });
+                    },
+                    activeColor: Colors.deepPurple,
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                  CheckboxListTile(
+                    title: const Text("Exchange Product"),
+                    value: exchangeChecked,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        exchangeChecked = value!;
+                        if (exchangeChecked) {
+                          sellChecked = false;
+                          donateChecked = false;
+                        }
+                      });
+                    },
+                    activeColor: Colors.deepPurple,
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.deepPurple),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    if (sellChecked || donateChecked || exchangeChecked) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddItemScreen(
+                            itemType: sellChecked
+                                ? "Sell"
+                                : donateChecked
+                                ? "Donate"
+                                : "Exchanges",
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text(
+                    "Continue",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +135,7 @@ class DonationItems extends StatelessWidget {
         "image": "images/Laptop.png",
         "title": "Laptop",
         "distance": "1.5 km away",
+        "price": "Free",
         "description": "Dell Inspiron 15\n8GB RAM, 256GB SSD\nGood condition",
         "donor": {
           "name": "Ahmed Khan",
@@ -30,6 +147,7 @@ class DonationItems extends StatelessWidget {
         "image": "images/Chair.png",
         "title": "Office Chair",
         "distance": "2.3 km away",
+        "price": "Free",
         "description": "Ergonomic office chair\nAdjustable height\nLike new",
         "donor": {
           "name": "Fatima Ali",
@@ -41,6 +159,7 @@ class DonationItems extends StatelessWidget {
         "image": "images/Books.png",
         "title": "Book Collection",
         "distance": "0.8 km away",
+        "price": "Free",
         "description": "Various fiction books\nGood condition\n20+ titles",
         "donor": {
           "name": "Usman Malik",
@@ -52,6 +171,7 @@ class DonationItems extends StatelessWidget {
         "image": "images/Kitchen.png",
         "title": "Kitchen Set",
         "distance": "3.1 km away",
+        "price": "Free",
         "description": "Complete kitchen set\nPots, pans, utensils\nGood condition",
         "donor": {
           "name": "Ayesha Rehman",
@@ -73,6 +193,15 @@ class DonationItems extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.deepPurple),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          },
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.all(isLargeScreen ? 24 : 16),
@@ -145,6 +274,23 @@ class DonationItems extends StatelessWidget {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              donationItems[index]['price'],
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepPurple,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -181,19 +327,34 @@ class DonationItems extends StatelessWidget {
           showUnselectedLabels: true,
           elevation: 10,
           onTap: (index) {
+            if (index == currentIndex) return;
 
-            if (index == 0) {
-              Navigator.pushReplacementNamed(context, '/home');
-            } else if (index == 4) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AccountScreen()),
-              );
+            switch (index) {
+              case 0:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                );
+                break;
+              case 1:
+              // Already on donations page
+                break;
+              case 2:
+                _showAddItemDialog(context);
+                break;
+              case 3:
+              // Chats - add your chat screen navigation here
+                break;
+              case 4:
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AccountScreen()),
+                );
+                break;
             }
           },
           items: const [
             BottomNavigationBarItem(
-
               icon: Icon(Icons.home_filled),
               label: "Home",
             ),
@@ -202,7 +363,6 @@ class DonationItems extends StatelessWidget {
               label: "Donations",
             ),
             BottomNavigationBarItem(
-
               icon: Icon(Icons.add),
               label: "Add",
             ),
