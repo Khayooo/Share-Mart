@@ -48,6 +48,7 @@ dependencies:
   cloud_firestore: any
   file_picker: any
   path: any
+  google_maps_flutter: any
 
 
 

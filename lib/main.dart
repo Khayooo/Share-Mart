@@ -31,6 +31,7 @@ class MyApp extends StatelessWidget {
        // home:  SplashScreen(),
       // home: HomePage(),
       // home: ItemListed(),
+
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {

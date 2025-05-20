@@ -604,12 +604,20 @@ class ItemModel {
   final String productPrice;
   final String productDescription;
   final String image;
+  final String sellerId;
+  final String sellerName;
+  final String itemId;
+  final String itemType;
 
   ItemModel({
     required this.productName,
     required this.productPrice,
     required this.productDescription,
     required this.image,
+    required this.sellerId,
+    required this.sellerName,
+    required this.itemId,
+    required this.itemType,
   });
 
   factory ItemModel.fromMap(Map<String, dynamic> map) {
@@ -618,6 +626,10 @@ class ItemModel {
       productPrice: map['productPrice'] ?? '',
       productDescription: map['productDescription'] ?? '',
       image: map['image'] ?? '',
+      sellerId: map['sellerId'] ?? '',
+      sellerName: map['sellerName'] ?? '',
+      itemId: map['itemId'] ?? '',
+      itemType: map['itemType'] ?? 'sell',
     );
   }
 }

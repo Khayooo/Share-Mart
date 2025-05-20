@@ -342,6 +342,11 @@ class _AccountScreenState extends State<AccountScreen> with SingleTickerProvider
                 context,
                 MaterialPageRoute(builder: (context) => const DonationItems()),
               );
+            } else if (index == 2) { // Add button
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DonationItems()), // Or your "Add Item" screen
+              );
             } else if (index == 4) {
               // Already on account screen
               return;
